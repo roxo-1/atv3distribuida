@@ -5,8 +5,10 @@ Pedro Casas Pequeno Junior
 */
 
 #include <stdio.h>
+#include <mpi.h>
 /*
-Implemente um programa MPI que siga os seguintes passos:
+mpicc -o somaQuadrados somaQuadrados.c
+mpirun --oversubscribe -np 4 ./somaQuadrados
 1. O processo root (rank 0) deve criar um vetor contendo os inteiros de 1 a N, onde N = 40.
 2. Esse vetor deverá ser dividido igualmente entre todos os processos com MPI_Scatter.
     Exemplo: se N = 40 e há 4 processos, cada um receberá 10 elementos.
@@ -22,6 +24,13 @@ Implemente um programa MPI que siga os seguintes passos:
 */
 
 
-int main(){
+int main(int argc, char **argv){
+    int rank, size;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    printf("Hello, I am process %d of %d\n", rank, size);
+    MPI_Finalize();
+
     return 0;
 }
