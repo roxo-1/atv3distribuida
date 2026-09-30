@@ -4,9 +4,6 @@ Carolina Lee
 Pedro Casas Pequeno Junior
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <mpi.h>
 /*
 mpicc -o somaQuadrados somaQuadrados.c
 mpirun --oversubscribe -np 4 ./somaQuadrados
@@ -24,6 +21,9 @@ mpirun --oversubscribe -np 4 ./somaQuadrados
     Se os valores coincidem ou não
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <mpi.h>
 
 int main(int argc, char *argv[]) {
     int i;
@@ -32,7 +32,6 @@ int main(int argc, char *argv[]) {
     int *data = NULL;              // Ponteiro para o vetor completo (só usado pelo root)
     int *local_data;               // Vetor local com parte dos dados em cada processo
     int local_poten = 0;             // Potencia parcial de cada processo
-    int *partial_poten = NULL;      // Vetor para coletar potencias parciais no processo root
     int total_poten = 0;             // Potencia final (calculada pelo processo root)
 
     MPI_Init(&argc, &argv);
@@ -60,8 +59,7 @@ int main(int argc, char *argv[]) {
     // Scatter: distribui pedaços do vetor do root para todos os processos
     MPI_Scatter(data, chunk_tam, MPI_INT, local_data, chunk_tam, MPI_INT, 0, MPI_COMM_WORLD);
     
-    
-    // Cada processo calcula a potencia parcial de seu pedaço
+
     for (i = 0; i < chunk_tam; i++) {
         local_poten += local_data[i]*local_data[i];
     }
@@ -70,9 +68,17 @@ int main(int argc, char *argv[]) {
     if (rank == 0) {
         partial_poten = (int *)malloc(processadores_num * sizeof(int));
     }
+    
+    // Mostra pedaço recebido de cada processo
+    printf("Processo %d recebeu:", rank);
+    for (i = 0; i < chunk_tam; i++) {
+        printf(" %d", local_data[i]);
+    }
+    printf("\n");
 
     // Mostra o valor local de cada processo
     printf("Processo %d: valor local = %d\n", rank, local_poten);
+    printf("\n");
 
     // Usa MPI_Reduce para somar todos os valores locais e enviar o resultado para o processo 0
     MPI_Reduce(&local_poten,     // endereço do valor a ser enviado
@@ -89,13 +95,14 @@ int main(int argc, char *argv[]) {
         // n*(n+1)*(n*2+1)/6 somatorio resultado tem que ser igual
         // somatorio resultado tem que ser igual
         int formula = N*(N+1)*(N*2+1)/6;
-        printf("Processo %d: soma da potencia global = %d\n", rank, total_poten);
-        printf("Resultado seguindo a formula = %d\n", formula);
+        printf("\nProcesso %d: Soma da potencia global = %d\n", rank, total_poten);
+        printf("Processo %d: Resultado seguindo a formula = %d\n", rank, formula);
         if (formula == total_poten) {
             printf("Valores conferem!");
         } else {
             printf("Valores não conferem!");
         }
+        free(data);
     }
     // Libera a memória do vetor local
     free(local_data);
