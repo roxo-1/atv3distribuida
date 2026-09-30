@@ -19,6 +19,13 @@ mpirun --oversubscribe -np 4 ./somaQuadrados
     O resultado da soma paralela
     O resultado da soma sequencial
     Se os valores coincidem ou não
+
+ Regras e restrições
+
+O vetor global deve ser dividido igualmente — use um número de processos que divida 40 exatamente.
+Use apenas MPI_Scatter e MPI_Reduce.
+Não utilize MPI_Gather, MPI_Probe, MPI_Cancel nem MPI_Allgather.
+O programa deve funcionar corretamente com 4 processos.
 */
 
 #include <stdio.h>
@@ -42,6 +49,12 @@ int main(int argc, char *argv[]) {
     // Obtém o número total de processos em execução
     MPI_Comm_size(MPI_COMM_WORLD, &processadores_num);
 
+    if (N % processadores_num != 0) {
+      if (rank == 0) printf("O vetor global deve ser dividido igualmente, use um número de processos que divida N exatamente.\n");
+      MPI_Finalize();
+      return 1;
+    }
+
     // Cada processo irá receber uma parte igual do vetor
     int chunk_tam = N / processadores_num;
 
@@ -64,11 +77,6 @@ int main(int argc, char *argv[]) {
         local_poten += local_data[i]*local_data[i];
     }
 
-    // O processo root aloca memória para receber todas as potencias parciais
-    if (rank == 0) {
-        partial_poten = (int *)malloc(processadores_num * sizeof(int));
-    }
-    
     // Mostra pedaço recebido de cada processo
     printf("Processo %d recebeu:", rank);
     for (i = 0; i < chunk_tam; i++) {
